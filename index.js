@@ -72,8 +72,23 @@ const checkLetter = (obj, char, st) => {
   checkChar(obj, char)
   if (!includes(char, getters.getAnswer(state))) {
     mutations.setGuesses(st)
+    console.log('INCORRECT')
+  } else {
+    console.log('CORRECT')
   }
   mutations.setGuessedLetters(st, char)
+}
+
+const separator = '\n--------------------------------------------------------------\n'
+
+const print = x => {
+  console.log(
+    separator +
+    x.wordString(x.word) + '\n\n' +
+    'You have ' + getters.getGuesses(state) + ' guesses remaining.' + '\n\n' +
+    'Guessed letters: ' + getters.getGuessedLetters(state) +
+    separator
+  )
 }
 
 // function to start new game
@@ -143,14 +158,7 @@ const ask = x => {
       checkLetter(x, answers.choice, state)
 
       // print the results to the terminal
-      const separator = '\n--------------------------------------------------------------\n'
-      console.log(
-        separator +
-        x.wordString(x.word) + '\n\n' +
-        'You have ' + getters.getGuesses(state) + ' guesses remaining.' + '\n\n' +
-        'Guessed letters: ' + getters.getGuessedLetters(state) +
-        separator
-      )
+      print(x)
 
       // check to see if game should continue, if not, ask if the user would like to play again
       if (!includes('-', x.wordString(x.word))) {
@@ -167,4 +175,5 @@ const ask = x => {
 
 // RUN THE GAME
 chooseWord(wordArray, state)
+print(getters.getSelectedWord(state))
 ask(getters.getSelectedWord(state))
