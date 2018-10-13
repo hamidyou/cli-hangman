@@ -79,7 +79,7 @@ const checkLetter = (obj, char, st) => {
   mutations.setGuessedLetters(st, char)
 }
 
-const separator = '\n--------------------------------------------------------------\n'
+const separator = '\n\n--------------------------------------------------------------\n\n'
 
 const print = x => {
   console.log(
