@@ -124,43 +124,20 @@ const ask = x => {
         name: 'choice',
         // validate the user's response to make sure it is a letter, only 1 letter, and hasn't been guessed yet
         filter: input => {
-          return new Promise((resolve, reject) => {
-            const regex = /[a-z]/i
-            if (regex.test(input)) {
-              resolve(input)
-            } else {
-              const err1 = new Error('You entered an invalid character. Please select a letter from a - z.')
-              reject(err1)
-            }
-          })
-            .then(input => {
-              return new Promise((resolve, reject) => {
-                if (input.length <= 1) {
-                  resolve(input)
-                } else {
-                  const err2 = new Error('You entered too many characters. Please select only one letter at a time.')
-                  reject(err2)
-                }
-              })
-            })
-            .then(input => {
-              return new Promise((resolve, reject) => {
-                if (!includes(input.toLowerCase(), getters.getGuessedLetters(state))) {
-                  resolve(input.toLowerCase())
-                } else {
-                  const err3 = new Error('You have already guessed that letter. Please guess another letter.')
-                  reject(err3)
-                }
-              })
-            })
+          const regex = /[a-z]/i
+          if (!regex.test(input)) {
+            console.error('\nYou entered an invalid character. Please select a letter from a - z.')
+          } else if (input.length > 1) {
+            console.error('\nYou entered too many characters. Please select only one letter at a time.')
+          } else if (includes(input.toLowerCase(), getters.getGuessedLetters(state))) {
+            console.error('\nYou have already guessed that letter. Please guess another letter.')
+          }
+          return input.toLowerCase()
         }
       }
     ])
     .then(function (answers) {
       checkLetter(x, answers.choice, state)
-
-      // print the results to the terminal
-      // print(x)
 
       // check to see if game should continue, if not, ask if the user would like to play again
       if (!includes('-', x.wordString(x.word))) {
