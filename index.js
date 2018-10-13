@@ -93,6 +93,7 @@ const print = x => {
 
 // function to start new game
 const playAgain = x => {
+  print(x)
   inquirer
     .prompt([
       {
@@ -114,6 +115,7 @@ const playAgain = x => {
 
 // function containing the logic for game play
 const ask = x => {
+  print(x)
   inquirer
     .prompt([
       {
@@ -158,7 +160,7 @@ const ask = x => {
       checkLetter(x, answers.choice, state)
 
       // print the results to the terminal
-      print(x)
+      // print(x)
 
       // check to see if game should continue, if not, ask if the user would like to play again
       if (!includes('-', x.wordString(x.word))) {
@@ -175,5 +177,4 @@ const ask = x => {
 
 // RUN THE GAME
 chooseWord(wordArray, state)
-print(getters.getSelectedWord(state))
 ask(getters.getSelectedWord(state))
