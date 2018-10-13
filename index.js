@@ -1,8 +1,10 @@
+// load in dependencies
 const Word = require('./word')
 const wordArray = require('./wordArray')
 const { concat, includes, compose, curry } = require('kyanite/dist/kyanite')
 const inquirer = require('inquirer')
 
+// object to hold mutatable variables
 const state = {
   selectedWord: {},
   guesses: 9,
@@ -11,17 +13,16 @@ const state = {
   answer: ''
 }
 
+// object of functions to call mutated variables
 const getters = {
-  // Either pass state to this or access the state global up to you
   getGuesses: x => x.guesses,
-  // I use slice to make SURE the guesses state is a brand new object
-  // Removing the need to worry about refrence mutation
   getGuessedLetters: x => x.guessedLetters.slice(),
   getUsedWords: x => x.usedWords.slice(),
   getSelectedWord: x => x.selectedWord,
   getAnswer: x => x.answer
 }
 
+// object of functions to set mutated variables
 const mutations = {
   setGuesses: (cxt) => cxt.guesses--,
   setGuessedLetters: (cxt, data) => {
@@ -41,6 +42,7 @@ const mutations = {
   }
 }
 
+// select a random word for the word Arrar and return that word
 const selectedWord = arr => {
   const rand = Math.floor(Math.random() * 2045)
   const w = arr[rand]
@@ -48,10 +50,13 @@ const selectedWord = arr => {
   return w
 }
 
+// verify that the selected word hasn't been used yet in the current game
 const verify = curry((arr1, arr2, str) => includes(str, arr1) ? selectedWord(arr2) : mutations.setSelectedWord(state, str))
 
-const chooseWord = arr => compose(verify(getters.getUsedWords(state), arr), selectedWord, arr)
+// function to combine previous 2 functions to provide the word being used
+const chooseWord = (arr, st) => compose(verify(getters.getUsedWords(st), arr), selectedWord, arr)
 
+// function to reset the mutated variables for the next game
 const resetState = () => {
   state.answer = ''
   state.guessedLetters = []
@@ -59,6 +64,19 @@ const resetState = () => {
   state.selectedWord = {}
 }
 
+// function to check if letter is one of the characters from the Word object...checkLetter() brought in from word.js
+const checkChar = (obj, char) => obj.checkLetter(obj.word, char)
+
+// function to run checkChar AND change mutatable variables based on the result
+const checkLetter = (obj, char, st) => {
+  checkChar(obj, char)
+  if (!includes(char, getters.getAnswer(state))) {
+    mutations.setGuesses(st)
+  }
+  mutations.setGuessedLetters(st, char)
+}
+
+// function to start new game
 const playAgain = x => {
   inquirer
     .prompt([
@@ -71,7 +89,7 @@ const playAgain = x => {
     .then(function (a) {
       if (a.play) {
         resetState()
-        chooseWord(x)
+        chooseWord(x, state)
         ask(getters.getSelectedWord(state))
       } else {
         console.log('Goodbye!')
@@ -79,21 +97,53 @@ const playAgain = x => {
     })
 }
 
+// function containing the logic for game play
 const ask = x => {
   inquirer
     .prompt([
       {
         type: 'input',
         message: 'Choose a letter',
-        name: 'choice'
+        name: 'choice',
+        // validate the user's response to make sure it is a letter, only 1 letter, and hasn't been guessed yet
+        filter: input => {
+          return new Promise((resolve, reject) => {
+            const regex = /[a-z]/i
+            if (regex.test(input)) {
+              resolve(input)
+            } else {
+              const err1 = new Error('You entered an invalid character. Please select a letter from a - z.')
+              reject(err1)
+            }
+          })
+            .then(input => {
+              return new Promise((resolve, reject) => {
+                if (input.length <= 1) {
+                  resolve(input)
+                } else {
+                  const err2 = new Error('You entered too many characters. Please select only one letter at a time.')
+                  reject(err2)
+                }
+              })
+            })
+            .then(input => {
+              return new Promise((resolve, reject) => {
+                if (!includes(input.toLowerCase(), getters.getGuessedLetters(state))) {
+                  resolve(input.toLowerCase())
+                } else {
+                  const err3 = new Error('You have already guessed that letter. Please guess another letter.')
+                  reject(err3)
+                }
+              })
+            })
+        }
       }
     ])
     .then(function (answers) {
+      checkLetter(x, answers.choice, state)
+
+      // print the results to the terminal
       const separator = '\n--------------------------------------------------------------\n'
-      const checkChar = (obj, char) => obj.checkLetter(obj.word, char)
-      checkChar(x, answers.choice)
-      mutations.setGuesses(state)
-      mutations.setGuessedLetters(state, answers.choice)
       console.log(
         separator +
         x.wordString(x.word) + '\n\n' +
@@ -102,6 +152,7 @@ const ask = x => {
         separator
       )
 
+      // check to see if game should continue, if not, ask if the user would like to play again
       if (!includes('-', x.wordString(x.word))) {
         console.log('Congratulations!  You guessed the word!')
         playAgain(wordArray)
@@ -114,5 +165,6 @@ const ask = x => {
     })
 }
 
-chooseWord(wordArray)
+// RUN THE GAME
+chooseWord(wordArray, state)
 ask(getters.getSelectedWord(state))
